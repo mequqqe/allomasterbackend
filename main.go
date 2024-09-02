@@ -20,7 +20,6 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	// Подключение к базе данных
 	dsn := "host=localhost user=postgres password=1234 dbname=allomaster port=5432 sslmode=disable TimeZone=Asia/Almaty"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -35,12 +34,13 @@ func main() {
 	branchService := services.NewBranchService(branchRepo)
 	branchesController := controllers.NewBranchesController(branchService)
 
+	employeeRepo := repositories.NewEmployeeRepository(db)
+	employeeService := services.NewEmployeeService(employeeRepo)
+	employeesController := controllers.NewEmployeesController(employeeService)
 	r := mux.NewRouter()
 
-	// Используем CORS middleware
 	r.Use(middleware.CORS)
 
-	// Обработка OPTIONS запросов для всех маршрутов
 	r.Methods(http.MethodOptions).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -53,6 +53,8 @@ func main() {
 	secured.HandleFunc("/company/my-company", companyController.GetCompanyInfo).Methods("GET")
 	secured.HandleFunc("/branches", branchesController.AddBranch).Methods("POST")
 	secured.HandleFunc("/branches", branchesController.GetMyBranches).Methods("GET")
+	secured.HandleFunc("/employees", employeesController.AddEmployee).Methods("POST")
+	secured.HandleFunc("/employees", employeesController.GetEmployees).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8000", r))
 }
